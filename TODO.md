@@ -1,0 +1,5 @@
+- [x] Rewrite app/category/[slug]/page.tsx as clean production-ready implementation (zero duplication, single flow, single return)
+- [x] Harden lib/supabase/server.ts env validation and fail-safe behavior (no crashes from env unless truly required)
+- [x] Ensure generateMetadata never throws and falls back to canonicalCategories
+- [x] Ensure server component never crashes on null/undefined
+- [ ] Sanity check types and build correctness (tsc / next build)

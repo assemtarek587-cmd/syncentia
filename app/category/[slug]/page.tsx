@@ -1,7 +1,16 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, Clock, TrendingUp, Brain, Cloud, Server, GraduationCap, Gamepad2, Shield } from 'lucide-react'
+import {
+  ArrowLeft,
+  BadgeCheck,
+  Clock,
+  Gamepad2,
+  GraduationCap,
+  Shield,
+  Server,
+  TrendingUp,
+} from 'lucide-react'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { Badge } from '@/components/ui/badge'
@@ -10,15 +19,25 @@ import { getCategoryBySlug, getPostsByCategory } from '@/lib/content'
 import { formatDate } from '@/lib/format'
 import { buildMetadata } from '@/lib/site'
 
-interface PageProps {
-  params: Promise<{ slug: string }>
+type PageProps = {
+  params: { slug: string }
 }
 
-interface CanonicalCategory {
+type CanonicalCategory = {
   id: null
   name: string
   slug: string
-  description: string
+  description: string | null
+}
+
+
+
+type PostForList = {
+  id: string
+  slug: string
+  title: string
+  excerpt: string
+  published_at: string | null
 }
 
 const canonicalCategories: Record<string, CanonicalCategory> = {
@@ -60,9 +79,9 @@ const canonicalCategories: Record<string, CanonicalCategory> = {
   },
 }
 
-const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-  'ai-tools': Brain,
-  saas: Cloud,
+const categoryIcons: Record<string, (props: { className?: string }) => React.ReactNode> = {
+  'ai-tools': BadgeCheck,
+  saas: Server,
   hosting: Server,
   'student-tech': GraduationCap,
   'gaming-setup': Gamepad2,
@@ -78,35 +97,131 @@ const categoryColors: Record<string, string> = {
   vpns: 'from-teal-500/20 to-cyan-500/20',
 }
 
+function normalizeSlug(value: unknown): string {
+  if (typeof value !== 'string') return ''
+  const trimmed = value.trim()
+  if (!trimmed) return ''
+  return trimmed.toLowerCase()
+}
+
+function safeNonEmptyString(value: unknown, fallback: string): string {
+  return typeof value === 'string' && value.trim().length > 0 ? value : fallback
+}
+
+function safeCategoryDescription(description: unknown, name: string): string {
+  if (typeof description === 'string' && description.trim().length > 0) return description
+  return `Explore our curated collection of ${name} articles, reviews, and comparisons.`
+}
+
+function safePostList(posts: unknown): PostForList[] {
+  if (!Array.isArray(posts)) return []
+
+  return posts
+    .map((p: any, idx: number): PostForList | null => {
+      const slug = safeNonEmptyString(p?.slug, '')
+      const title = safeNonEmptyString(p?.title, 'Untitled')
+      const excerpt = typeof p?.excerpt === 'string' ? p.excerpt : ''
+      const publishedAt = typeof p?.published_at === 'string' ? p.published_at : null
+      const id = safeNonEmptyString(p?.id ?? slug ?? String(idx), String(idx))
+
+      if (!slug) return null
+
+      return {
+        id,
+        slug,
+        title,
+        excerpt,
+        published_at: publishedAt,
+      }
+    })
+    .filter((x): x is PostForList => Boolean(x))
+}
+
+function getCategoryFromSupabaseOrCanonical(slug: string): { category: CanonicalCategory | null; posts: PostForList[] } {
+  return { category: canonicalCategories[slug] ?? null, posts: [] }
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug: rawSlug } = await params
-  const slug = rawSlug.toLowerCase()
-  const category = (await getCategoryBySlug(slug)) || canonicalCategories[slug]
+  const slug = normalizeSlug(params?.slug)
 
-  if (!category) {
-    return buildMetadata({ title: 'Category Not Found', path: `/category/${slug}` })
+  const canonical = slug ? canonicalCategories[slug] : undefined
+  const name = canonical?.name ?? 'Category'
+  const description = safeCategoryDescription(canonical?.description, name)
+
+  if (!slug) return buildMetadata({ title: 'Category Not Found', path: '/category' })
+
+  try {
+    const categoryFromSupabase = await getCategoryBySlug(slug)
+    const category = categoryFromSupabase
+      ? {
+          id: null,
+          name: safeNonEmptyString(categoryFromSupabase.name, name),
+          slug: safeNonEmptyString(categoryFromSupabase.slug, slug),
+          description: categoryFromSupabase.description,
+        }
+      : canonical
+
+    if (!category) return buildMetadata({ title: 'Category Not Found', path: `/category/${slug}` })
+
+    const categoryName = safeNonEmptyString(category.name, 'Category')
+    const categorySlug = safeNonEmptyString(category.slug, slug)
+    const categoryDescription = safeCategoryDescription(category.description, categoryName)
+
+    return buildMetadata({
+      title: categoryName,
+      description: categoryDescription,
+      path: `/category/${categorySlug}`,
+    })
+  } catch {
+    if (!canonical) return buildMetadata({ title: 'Category Not Found', path: `/category/${slug}` })
+
+    return buildMetadata({
+      title: name,
+      description,
+      path: `/category/${slug}`,
+    })
   }
-
-  return buildMetadata({
-    title: category.name,
-    description: category.description || `Browse ${category.name} articles and reviews.`,
-    path: `/category/${category.slug}`,
-  })
 }
 
 export default async function CategoryPage({ params }: PageProps) {
-  const { slug: rawSlug } = await params
-  const slug = rawSlug.toLowerCase()
-  const categoryFromSupabase = await getCategoryBySlug(slug)
-  const category = categoryFromSupabase || canonicalCategories[slug]
+  const slug = normalizeSlug(params?.slug)
 
-  if (!category) {
-    notFound()
-  }
+  if (!slug) notFound()
 
-  const posts = categoryFromSupabase ? await getPostsByCategory(categoryFromSupabase.id) : []
-  const Icon = categoryIcons[slug] || TrendingUp
-  const gradientColor = categoryColors[slug] || 'from-primary/20 to-accent/20'
+  const { category, posts } = await (async () => {
+    try {
+      const categoryFromSupabase = await getCategoryBySlug(slug)
+      const resolvedCategory = categoryFromSupabase
+        ? {
+            id: null,
+            name: safeNonEmptyString(categoryFromSupabase.name, canonicalCategories[slug]?.name ?? 'Category'),
+            slug: safeNonEmptyString(categoryFromSupabase.slug, slug),
+            description: categoryFromSupabase.description,
+          }
+        : canonicalCategories[slug] ?? null
+
+      if (!resolvedCategory) return { category: null, posts: [] as PostForList[] }
+
+      try {
+        const categoryId = categoryFromSupabase?.id
+        const fetchedPosts = categoryId ? await getPostsByCategory(categoryId) : []
+        return { category: resolvedCategory, posts: safePostList(fetchedPosts) }
+      } catch {
+        return { category: resolvedCategory, posts: [] as PostForList[] }
+      }
+    } catch {
+      const resolvedCategory = canonicalCategories[slug] ?? null
+      return { category: resolvedCategory, posts: [] as PostForList[] }
+    }
+  })()
+
+  if (!category) notFound()
+
+  const Icon = categoryIcons[slug] ?? TrendingUp
+  const gradientColor = categoryColors[slug] ?? 'from-primary/20 to-accent/20'
+
+  const safeName = safeNonEmptyString(category.name, 'Category')
+  const safeDescription = safeCategoryDescription(category.description, safeName)
 
   return (
     <main className="min-h-screen">
@@ -127,17 +242,17 @@ export default async function CategoryPage({ params }: PageProps) {
           </Button>
 
           <div className="max-w-3xl">
-            <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${gradientColor} flex items-center justify-center mb-6`}>
+            <div
+              className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${gradientColor} flex items-center justify-center mb-6`}
+            >
               <Icon className="w-10 h-10 text-primary" />
             </div>
 
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              <span className="gradient-text">{category.name}</span>
+              <span className="gradient-text">{safeName}</span>
             </h1>
 
-            <p className="text-lg text-muted-foreground max-w-2xl">
-              {category.description || `Explore our curated collection of ${category.name} articles, reviews, and comparisons.`}
-            </p>
+            <p className="text-lg text-muted-foreground max-w-2xl">{safeDescription}</p>
 
             <div className="mt-8 flex items-center gap-6">
               <div className="glass px-4 py-2 rounded-lg">
@@ -168,17 +283,21 @@ export default async function CategoryPage({ params }: PageProps) {
                   <div className="p-5">
                     <div className="flex items-center gap-3 mb-3">
                       <Badge variant="outline" className="text-xs">
-                        {category.name}
+                        {safeName}
                       </Badge>
                       <span className="text-xs text-muted-foreground flex items-center gap-1">
                         <Clock className="w-3 h-3" />
-                        {formatDate(post.published_at)}
+                        {post.published_at ? formatDate(post.published_at) : '—'}
                       </span>
                     </div>
+
                     <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors line-clamp-2">
                       {post.title}
                     </h3>
-                    {post.excerpt && <p className="text-sm text-muted-foreground line-clamp-2">{post.excerpt}</p>}
+
+                    {post.excerpt ? (
+                      <p className="text-sm text-muted-foreground line-clamp-2">{post.excerpt}</p>
+                    ) : null}
                   </div>
                 </Link>
               ))}
@@ -199,3 +318,4 @@ export default async function CategoryPage({ params }: PageProps) {
     </main>
   )
 }
+

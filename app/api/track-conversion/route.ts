@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 
+// request.url used in GET; force dynamic to avoid Next prerender violations.
+export const dynamic = 'force-dynamic'
+
+
 // This endpoint handles Server-to-Server (S2S) postbacks from affiliate networks
 // as well as client-side conversion pings.
 async function processConversion(request: Request, data: Record<string, any>) {
@@ -20,6 +24,10 @@ async function processConversion(request: Request, data: Record<string, any>) {
   }
 
   const supabase = await createClient()
+
+  if (!supabase) {
+    return NextResponse.json({ success: false, error: 'Supabase unavailable' }, { status: 503 })
+  }
 
   const { error } = await supabase.from('conversions').insert({
     click_id: clickId || null,

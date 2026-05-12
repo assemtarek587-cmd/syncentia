@@ -16,6 +16,10 @@ function safeFallbackRedirect(request: NextRequest) {
 async function resolveTarget(slug: string): Promise<AffiliateTarget | null> {
   const supabase = await createClient()
 
+  if (!supabase) {
+    return null
+  }
+
   const { data: affiliateLink } = await supabase
     .from('affiliate_links')
     .select('id, slug, destination_url')
@@ -63,9 +67,13 @@ function getDeviceType(userAgent: string): string {
 
 async function trackClick(request: NextRequest, target: AffiliateTarget) {
   const supabase = await createClient()
+  if (!supabase) {
+    return null
+  }
+
   const url = request.nextUrl
   const cookieStore = await cookies()
-  
+
   const userAgent = request.headers.get('user-agent') || ''
   const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
   const country = request.headers.get('x-vercel-ip-country') || 'unknown'
@@ -132,7 +140,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   try {
     trackingResult = await trackClick(request, target)
-    
+
     if (trackingResult) {
       // S2S Tracking: Inject the Click ID into the destination URL
       // If the admin used the [CLICK_ID] macro, replace it. Otherwise, append it as a query param.
@@ -158,7 +166,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
     })
-    
+
     // Set persistent session cookie
     response.cookies.set('syn_session_id', trackingResult.sessionId, {
       maxAge: 60 * 60 * 24 * 365, // 1 year

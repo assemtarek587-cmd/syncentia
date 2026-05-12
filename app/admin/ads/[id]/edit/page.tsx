@@ -8,11 +8,14 @@ import { AdForm } from '../../ad-form'
 import { updateAd } from '../../actions'
 
 interface PageProps {
-  params: Promise<{ id: string }>
+  params: { id: string }
 }
 
 async function getAd(id: string) {
+
   const supabase = await createClient()
+  if (!supabase) return null
+
   const { data, error } = await supabase
     .from('ads')
     .select('id, name, placement, slot_id, format, label, is_active')
@@ -24,7 +27,8 @@ async function getAd(id: string) {
 }
 
 export default async function EditAdPage({ params }: PageProps) {
-  const { id } = await params
+  const { id } = params
+
   const ad = await getAd(id)
 
   if (!ad) {

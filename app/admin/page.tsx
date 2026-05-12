@@ -5,6 +5,19 @@ import { FileText, Link2, Mail, Megaphone, MousePointerClick, Package, DollarSig
 async function getStats() {
   const supabase = await createClient()
 
+  if (!supabase) {
+    return {
+      posts: 0,
+      products: 0,
+      subscribers: 0,
+      affiliateLinks: 0,
+      clicks: 0,
+      ads: 0,
+      conversions: 0,
+      revenue: 0,
+    }
+  }
+
   const [
     postsResult,
     productsResult,
@@ -40,6 +53,7 @@ async function getStats() {
 
 async function getDeviceStats() {
   const supabase = await createClient()
+  if (!supabase) return { mobile: 0, desktop: 0, tablet: 0 }
   const { data } = await supabase.from('affiliate_clicks').select('device_type')
 
   const counts = { mobile: 0, desktop: 0, tablet: 0 }
@@ -54,6 +68,7 @@ async function getDeviceStats() {
 
 async function getRecentPosts() {
   const supabase = await createClient()
+  if (!supabase) return []
 
   const { data } = await supabase
     .from('posts')
@@ -66,6 +81,7 @@ async function getRecentPosts() {
 
 async function getRecentSubscribers() {
   const supabase = await createClient()
+  if (!supabase) return []
 
   const { data } = await supabase
     .from('newsletter_subscribers')

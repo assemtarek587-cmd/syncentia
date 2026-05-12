@@ -8,6 +8,9 @@ import { deleteAffiliateLink } from './actions'
 
 async function getAffiliateLinks() {
   const supabase = await createClient()
+  if (!supabase) {
+    return []
+  }
   const [{ data: links }, { data: clicks }] = await Promise.all([
     supabase
       .from('affiliate_links')

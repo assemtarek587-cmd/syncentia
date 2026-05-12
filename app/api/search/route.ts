@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+// Prevent Next.js static prerender from attempting to render this route.
+// This route is inherently request-dependent (uses request.url).
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url)
@@ -12,6 +16,10 @@ export async function GET(request: Request) {
 
     const search = `%${query.replace(/[%_]/g, '\\$&')}%`
     const supabase = await createClient()
+
+    if (!supabase) {
+      return NextResponse.json({ results: [] })
+    }
 
     const [postsResponse, linksResponse, categoriesResponse] = await Promise.all([
       supabase

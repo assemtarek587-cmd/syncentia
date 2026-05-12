@@ -9,11 +9,15 @@ import { ProductForm } from '../../product-form'
 import { updateProduct } from '../../actions'
 
 interface PageProps {
-  params: Promise<{ id: string }>
+  params: { id: string }
 }
 
 async function getProduct(id: string) {
+
+
   const supabase = await createClient()
+  if (!supabase) return null
+
   const { data, error } = await supabase
     .from('products')
     .select('*')
@@ -25,7 +29,8 @@ async function getProduct(id: string) {
 }
 
 export default async function EditProductPage({ params }: PageProps) {
-  const { id } = await params
+  const { id } = params
+
   const [product, categories] = await Promise.all([getProduct(id), getCategories()])
 
   if (!product) {

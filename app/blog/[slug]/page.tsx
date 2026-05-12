@@ -14,11 +14,12 @@ import { formatDate } from '@/lib/format'
 import { buildMetadata, absoluteUrl } from '@/lib/site'
 
 interface PageProps {
-  params: Promise<{ slug: string }>
+  params: { slug: string }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params
+  const { slug } = params
+
   const post = await getPostBySlug(slug)
 
   if (!post) {
@@ -33,7 +34,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function BlogPostPage({ params }: PageProps) {
-  const { slug } = await params
+  const { slug } = params
+
   const post = await getPostBySlug(slug)
 
   if (!post) {
@@ -41,7 +43,7 @@ export default async function BlogPostPage({ params }: PageProps) {
   }
 
   const relatedPosts = await getRelatedPosts(post.category_id, post.slug)
-  
+
   // SEO Engine: Structured Data
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -65,7 +67,7 @@ export default async function BlogPostPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      
+
       <Navbar />
 
       <article className="pt-28 pb-16">
@@ -113,8 +115,8 @@ export default async function BlogPostPage({ params }: PageProps) {
           <div className="max-w-4xl mx-auto mb-12">
             {post.featured_image ? (
               <div className="relative w-full aspect-video rounded-2xl overflow-hidden">
-                <Image 
-                  src={post.featured_image} 
+                <Image
+                  src={post.featured_image}
                   alt={post.title}
                   fill
                   className="object-cover"

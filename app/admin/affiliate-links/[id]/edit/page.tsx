@@ -9,11 +9,14 @@ import { AffiliateLinkForm } from '../../affiliate-link-form'
 import { updateAffiliateLink } from '../../actions'
 
 interface PageProps {
-  params: Promise<{ id: string }>
+  params: { id: string }
 }
 
 async function getAffiliateLink(id: string) {
+
   const supabase = await createClient()
+  if (!supabase) return null
+
   const { data, error } = await supabase
     .from('affiliate_links')
     .select('id, title, slug, destination_url, description, cta_label, category_id, is_active, is_featured')
@@ -25,7 +28,8 @@ async function getAffiliateLink(id: string) {
 }
 
 export default async function EditAffiliateLinkPage({ params }: PageProps) {
-  const { id } = await params
+  const { id } = params
+
   const [affiliateLink, categories] = await Promise.all([getAffiliateLink(id), getCategories()])
 
   if (!affiliateLink) {

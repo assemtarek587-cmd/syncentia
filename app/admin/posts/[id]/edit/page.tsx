@@ -9,11 +9,15 @@ import { PostForm } from '../../post-form'
 import { updatePost } from '../../actions'
 
 interface PageProps {
-  params: Promise<{ id: string }>
+  params: { id: string }
 }
 
 async function getPost(id: string) {
+
+
   const supabase = await createClient()
+  if (!supabase) return null
+
   const { data, error } = await supabase
     .from('posts')
     .select('id, title, slug, excerpt, content, featured_image, category_id, is_published, is_featured')
@@ -25,7 +29,8 @@ async function getPost(id: string) {
 }
 
 export default async function EditPostPage({ params }: PageProps) {
-  const { id } = await params
+  const { id } = params
+
   const [post, categories] = await Promise.all([getPost(id), getCategories()])
 
   if (!post) {

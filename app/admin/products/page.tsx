@@ -20,6 +20,7 @@ function relationName(value: unknown) {
 
 async function getProducts() {
   const supabase = await createClient()
+  if (!supabase) return []
 
   const { data } = await supabase
     .from('products')

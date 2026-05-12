@@ -20,8 +20,10 @@ function relationName(value: unknown) {
 
 async function getPosts() {
   const supabase = await createClient()
+  if (!supabase) return []
 
   const { data } = await supabase
+
     .from('posts')
     .select(
       `

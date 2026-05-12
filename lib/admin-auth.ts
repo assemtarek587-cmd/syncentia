@@ -3,9 +3,15 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function requireAdmin() {
   const supabase = await createClient()
+
+  if (!supabase) {
+    redirect('/auth/login?redirect=/admin')
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser()
+
 
   if (!user) {
     redirect('/auth/login?redirect=/admin')

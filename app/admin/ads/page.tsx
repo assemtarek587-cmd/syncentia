@@ -8,6 +8,7 @@ import { deleteAd } from './actions'
 
 async function getAds() {
   const supabase = await createClient()
+  if (!supabase) return []
   const { data } = await supabase
     .from('ads')
     .select('id, name, placement, slot_id, format, label, is_active, created_at')

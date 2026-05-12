@@ -12,11 +12,12 @@ import { getProductBySlug } from '@/lib/content'
 import { buildMetadata, absoluteUrl } from '@/lib/site'
 
 interface PageProps {
-  params: Promise<{ slug: string }>
+  params: { slug: string }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params
+  const { slug } = params
+
   const product = await getProductBySlug(slug)
 
   if (!product) {
@@ -31,7 +32,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function ProductPage({ params }: PageProps) {
-  const { slug } = await params
+  const { slug } = params
+
   const product = await getProductBySlug(slug)
 
   if (!product) {
@@ -66,7 +68,7 @@ export default async function ProductPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      
+
       <Navbar />
 
       <section className="relative pt-32 pb-20 overflow-hidden">
@@ -136,11 +138,11 @@ export default async function ProductPage({ params }: PageProps) {
             <aside className="rounded-2xl border border-border bg-card p-6 h-fit">
               <div className="mb-6 aspect-video rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 overflow-hidden relative flex items-center justify-center">
                 {product.image_url ? (
-                  <Image 
-                    src={product.image_url} 
-                    alt={product.name} 
+                  <Image
+                    src={product.image_url}
+                    alt={product.name}
                     fill
-                    className="object-cover" 
+                    className="object-cover"
                   />
                 ) : (
                   <span className="text-primary/50 font-bold text-xl">No Image</span>

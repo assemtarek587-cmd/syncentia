@@ -14,6 +14,10 @@ export async function POST(request: Request) {
 
     const supabase = await createClient()
 
+    if (!supabase) {
+      return NextResponse.json({ error: 'Supabase unavailable' }, { status: 503 })
+    }
+
     const { error } = await supabase
       .from('newsletter_subscribers')
       .insert({ email: email.toLowerCase() })

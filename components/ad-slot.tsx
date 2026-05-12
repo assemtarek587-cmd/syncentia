@@ -19,6 +19,8 @@ const envSlotByPlacement: Record<AdPlacement, string | undefined> = {
 
 async function getConfiguredAd(placement: AdPlacement) {
   const supabase = await createClient()
+  if (!supabase) return null
+
   const { data, error } = await supabase
     .from('ads')
     .select('slot_id, format, label')

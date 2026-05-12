@@ -52,6 +52,7 @@ function normalizeArray(value: unknown): string[] {
 
 export async function getCategories(): Promise<Category[]> {
   const supabase = await createClient()
+  if (!supabase) return []
   const { data, error } = await supabase
     .from('categories')
     .select('id, name, slug, description')
@@ -63,6 +64,7 @@ export async function getCategories(): Promise<Category[]> {
 
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
   const supabase = await createClient()
+  if (!supabase) return null
   const { data, error } = await supabase
     .from('categories')
     .select('id, name, slug, description')
@@ -75,6 +77,7 @@ export async function getCategoryBySlug(slug: string): Promise<Category | null> 
 
 export async function getPublishedPosts(): Promise<PostSummary[]> {
   const supabase = await createClient()
+  if (!supabase) return []
   const categories = await getCategories()
   const { data, error } = await supabase
     .from('posts')
@@ -92,6 +95,7 @@ export async function getPublishedPosts(): Promise<PostSummary[]> {
 
 export async function getFeaturedPosts(limit = 3): Promise<PostSummary[]> {
   const supabase = await createClient()
+  if (!supabase) return []
   const categories = await getCategories()
   const { data, error } = await supabase
     .from('posts')
@@ -111,6 +115,7 @@ export async function getFeaturedPosts(limit = 3): Promise<PostSummary[]> {
 
 export async function getPostBySlug(slug: string): Promise<PostDetail | null> {
   const supabase = await createClient()
+  if (!supabase) return null
   const categories = await getCategories()
   const { data, error } = await supabase
     .from('posts')
@@ -131,6 +136,7 @@ export async function getPostBySlug(slug: string): Promise<PostDetail | null> {
 
 export async function getPostsByCategory(categoryId: string): Promise<PostSummary[]> {
   const supabase = await createClient()
+  if (!supabase) return []
   const categories = await getCategories()
   const { data, error } = await supabase
     .from('posts')
@@ -155,6 +161,7 @@ export async function getRelatedPosts(
   if (!categoryId) return []
 
   const supabase = await createClient()
+  if (!supabase) return []
   const categories = await getCategories()
   const { data, error } = await supabase
     .from('posts')
@@ -175,6 +182,7 @@ export async function getRelatedPosts(
 
 export async function getPublishedProducts(): Promise<Product[]> {
   const supabase = await createClient()
+  if (!supabase) return []
   const categories = await getCategories()
   const { data, error } = await supabase
     .from('products')
@@ -199,6 +207,7 @@ export async function getPublishedProducts(): Promise<Product[]> {
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
   const supabase = await createClient()
+  if (!supabase) return null
   const categories = await getCategories()
   const { data, error } = await supabase
     .from('products')

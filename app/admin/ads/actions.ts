@@ -29,6 +29,9 @@ function revalidateAds() {
 
 export async function createAd(formData: FormData) {
   const { supabase } = await requireAdmin()
+  if (!supabase) {
+    throw new Error('Supabase unavailable')
+  }
   const data = payload(formData)
 
   if (!data.name || !data.placement) {
@@ -36,6 +39,7 @@ export async function createAd(formData: FormData) {
   }
 
   const { error } = await supabase.from('ads').insert(data)
+
 
   if (error) {
     throw new Error(error.message)
@@ -47,7 +51,11 @@ export async function createAd(formData: FormData) {
 
 export async function updateAd(id: string, formData: FormData) {
   const { supabase } = await requireAdmin()
+  if (!supabase) {
+    throw new Error('Supabase unavailable')
+  }
   const data = payload(formData)
+
 
   if (!data.name || !data.placement) {
     throw new Error('Name and placement are required.')
@@ -65,7 +73,11 @@ export async function updateAd(id: string, formData: FormData) {
 
 export async function deleteAd(formData: FormData) {
   const { supabase } = await requireAdmin()
+  if (!supabase) {
+    throw new Error('Supabase unavailable')
+  }
   const id = value(formData, 'id')
+
 
   if (!id) {
     throw new Error('Ad id is required.')
