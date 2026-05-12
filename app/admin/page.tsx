@@ -1,8 +1,6 @@
-
-import { Activity } from "lucide-react"
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { FileText, Link2, Mail, Megaphone, MousePointerClick, Package, DollarSign, Target, Monitor, Smartphone, Tablet } from 'lucide-react'
+import { FileText, Link2, Mail, Megaphone, MousePointerClick, Package, DollarSign, Target, Monitor, Smartphone, Tablet, Activity} from 'lucide-react'
 
 async function getStats() {
   const supabase = await createClient()
