@@ -1,16 +1,18 @@
+
+import { Activity } from "lucide-react"
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FileText, Link2, Mail, Megaphone, MousePointerClick, Package, DollarSign, Target, Monitor, Smartphone, Tablet } from 'lucide-react'
 
 async function getStats() {
   const supabase = await createClient()
-  
+
   const [
-    postsResult, 
-    productsResult, 
-    subscribersResult, 
-    affiliateLinksResult, 
-    clicksResult, 
+    postsResult,
+    productsResult,
+    subscribersResult,
+    affiliateLinksResult,
+    clicksResult,
     adsResult,
     conversionsResult
   ] = await Promise.all([
@@ -41,20 +43,20 @@ async function getStats() {
 async function getDeviceStats() {
   const supabase = await createClient()
   const { data } = await supabase.from('affiliate_clicks').select('device_type')
-  
+
   const counts = { mobile: 0, desktop: 0, tablet: 0 }
   ;(data || []).forEach(click => {
     if (click.device_type === 'mobile') counts.mobile++
     else if (click.device_type === 'tablet') counts.tablet++
     else counts.desktop++
   })
-  
+
   return counts
 }
 
 async function getRecentPosts() {
   const supabase = await createClient()
-  
+
   const { data } = await supabase
     .from('posts')
     .select('id, title, is_published, created_at')
@@ -66,7 +68,7 @@ async function getRecentPosts() {
 
 async function getRecentSubscribers() {
   const supabase = await createClient()
-  
+
   const { data } = await supabase
     .from('newsletter_subscribers')
     .select('id, email, subscribed_at')
@@ -132,7 +134,7 @@ export default async function AdminDashboard() {
 
       {/* Analytics & Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Device Breakdown */}
         <Card className="bg-card border-border lg:col-span-1">
           <CardHeader>
@@ -186,8 +188,8 @@ export default async function AdminDashboard() {
                       <p className="text-xs text-muted-foreground">{formatDate(post.created_at)}</p>
                     </div>
                     <span className={`text-xs px-2 py-1 rounded ${
-                      post.is_published 
-                        ? 'bg-green-500/20 text-green-400' 
+                      post.is_published
+                        ? 'bg-green-500/20 text-green-400'
                         : 'bg-yellow-500/20 text-yellow-400'
                     }`}>
                       {post.is_published ? 'Published' : 'Draft'}
