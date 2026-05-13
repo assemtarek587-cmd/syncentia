@@ -65,7 +65,7 @@ async function trackClick(request: NextRequest, target: AffiliateTarget) {
   const supabase = await createClient()
   const url = request.nextUrl
   const cookieStore = await cookies()
-  
+
   const userAgent = request.headers.get('user-agent') || ''
   const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
   const country = request.headers.get('x-vercel-ip-country') || 'unknown'
@@ -82,34 +82,25 @@ async function trackClick(request: NextRequest, target: AffiliateTarget) {
     sessionId = crypto.randomUUID()
   }
 
-  // Duplicate click suppression (Check if same IP + target clicked in last 5 mins)
-  const fiveMinsAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
-  const { data: recentClicks } = await supabase
+  // Duplicate click suppression and enrichment are intentionally omitted here
+  // because the runtime DB schema must match exactly what exists in `supabase/schema.sql`.
+  // Current schema.sql only includes: affiliate_link_id, product_id, slug, referrer,
+  // user_agent, utm_source/utm_medium/utm_campaign, clicked_at.
+
+  const { data: clickData, error } = await supabase
     .from('affiliate_clicks')
+    .insert({
+      affiliate_link_id: target.source === 'affiliate_links' ? target.id : null,
+      product_id: target.source === 'products' ? target.id : null,
+      slug: target.slug,
+      referrer: request.headers.get('referer'),
+      user_agent: userAgent.slice(0, 500),
+      utm_source: url.searchParams.get('utm_source'),
+      utm_medium: url.searchParams.get('utm_medium'),
+      utm_campaign: url.searchParams.get('utm_campaign'),
+    })
     .select('id')
-    .eq('ip_address', ipAddress)
-    .eq('slug', target.slug)
-    .gte('created_at', fiveMinsAgo)
-    .limit(1)
-
-  if (recentClicks && recentClicks.length > 0) {
-    // Duplicate suppressed, do not record another click
-    return null
-  }
-
-  const { data: clickData, error } = await supabase.from('affiliate_clicks').insert({
-    affiliate_link_id: target.source === 'affiliate_links' ? target.id : null,
-    product_id: target.source === 'products' ? target.id : null,
-    slug: target.slug,
-    referrer: request.headers.get('referer'),
-    user_agent: userAgent.slice(0, 500),
-    ip_address: ipAddress,
-    country: country,
-    device_type: deviceType,
-    utm_source: url.searchParams.get('utm_source'),
-    utm_medium: url.searchParams.get('utm_medium'),
-    utm_campaign: url.searchParams.get('utm_campaign'),
-  }).select('id').single()
+    .single()
 
   if (error) {
     console.error('Tracking error:', error)
@@ -132,7 +123,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   try {
     trackingResult = await trackClick(request, target)
-    
+
     if (trackingResult) {
       // S2S Tracking: Inject the Click ID into the destination URL
       // If the admin used the [CLICK_ID] macro, replace it. Otherwise, append it as a query param.
@@ -158,7 +149,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
     })
-    
+
     // Set persistent session cookie
     response.cookies.set('syn_session_id', trackingResult.sessionId, {
       maxAge: 60 * 60 * 24 * 365, // 1 year

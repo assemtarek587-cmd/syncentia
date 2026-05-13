@@ -5,14 +5,15 @@ import { FileText, Link2, Mail, Megaphone, MousePointerClick, Package, DollarSig
 async function getStats() {
   const supabase = await createClient()
 
+  // `conversions` table is not present in the current `supabase/schema.sql`.
+  // Keep admin dashboard stable by excluding it from queries.
   const [
     postsResult,
     productsResult,
     subscribersResult,
     affiliateLinksResult,
     clicksResult,
-    adsResult,
-    conversionsResult
+    adsResult
   ] = await Promise.all([
     supabase.from('posts').select('id', { count: 'exact', head: true }),
     supabase.from('products').select('id', { count: 'exact', head: true }),
@@ -20,11 +21,7 @@ async function getStats() {
     supabase.from('affiliate_links').select('id', { count: 'exact', head: true }).eq('is_active', true),
     supabase.from('affiliate_clicks').select('id', { count: 'exact', head: true }),
     supabase.from('ads').select('id', { count: 'exact', head: true }).eq('is_active', true),
-    supabase.from('conversions').select('amount')
   ])
-
-  const totalRevenue = (conversionsResult.data || []).reduce((sum, conv) => sum + Number(conv.amount || 0), 0)
-  const conversionsCount = conversionsResult.data?.length || 0
 
   return {
     posts: postsResult.count || 0,
@@ -33,24 +30,18 @@ async function getStats() {
     affiliateLinks: affiliateLinksResult.count || 0,
     clicks: clicksResult.count || 0,
     ads: adsResult.count || 0,
-    conversions: conversionsCount,
-    revenue: totalRevenue,
+    conversions: 0,
+    revenue: 0,
   }
 }
 
+
 async function getDeviceStats() {
-  const supabase = await createClient()
-  const { data } = await supabase.from('affiliate_clicks').select('device_type')
-
-  const counts = { mobile: 0, desktop: 0, tablet: 0 }
-  ;(data || []).forEach(click => {
-    if (click.device_type === 'mobile') counts.mobile++
-    else if (click.device_type === 'tablet') counts.tablet++
-    else counts.desktop++
-  })
-
-  return counts
+  // device_type is not present in the current `supabase/schema.sql` for affiliate_clicks.
+  // Return zeros so the admin dashboard cannot crash due to schema mismatch.
+  return { mobile: 0, desktop: 0, tablet: 0 }
 }
+
 
 async function getRecentPosts() {
   const supabase = await createClient()

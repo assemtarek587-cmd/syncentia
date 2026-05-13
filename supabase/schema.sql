@@ -161,102 +161,56 @@ alter table public.affiliate_clicks enable row level security;
 alter table public.ads enable row level security;
 alter table public.ad_impressions enable row level security;
 
-drop policy if exists "profiles_select_own_or_admin" on public.profiles;
-create policy "profiles_select_own_or_admin"
-on public.profiles for select
-using (auth.uid() = id or public.is_admin(auth.uid()));
+-- Public-only RLS policies (no auth.uid(), no profiles/is_admin-based permissions)
 
-drop policy if exists "profiles_admin_all" on public.profiles;
-create policy "profiles_admin_all"
-on public.profiles for all
-using (public.is_admin(auth.uid()))
-with check (public.is_admin(auth.uid()));
-
+-- Categories: public SELECT all
 drop policy if exists "categories_public_read" on public.categories;
 create policy "categories_public_read"
 on public.categories for select
 using (true);
 
-drop policy if exists "categories_admin_all" on public.categories;
-create policy "categories_admin_all"
-on public.categories for all
-using (public.is_admin(auth.uid()))
-with check (public.is_admin(auth.uid()));
-
+-- Posts: public SELECT only published
 drop policy if exists "posts_public_read_published" on public.posts;
 create policy "posts_public_read_published"
 on public.posts for select
-using (is_published = true or public.is_admin(auth.uid()));
+using (is_published = true);
 
-drop policy if exists "posts_admin_all" on public.posts;
-create policy "posts_admin_all"
-on public.posts for all
-using (public.is_admin(auth.uid()))
-with check (public.is_admin(auth.uid()));
-
+-- Products: public SELECT only published
 drop policy if exists "products_public_read_published" on public.products;
 create policy "products_public_read_published"
 on public.products for select
-using (is_published = true or public.is_admin(auth.uid()));
+using (is_published = true);
 
-drop policy if exists "products_admin_all" on public.products;
-create policy "products_admin_all"
-on public.products for all
-using (public.is_admin(auth.uid()))
-with check (public.is_admin(auth.uid()));
-
-drop policy if exists "newsletter_public_insert" on public.newsletter_subscribers;
-create policy "newsletter_public_insert"
-on public.newsletter_subscribers for insert
-with check (true);
-
-drop policy if exists "newsletter_admin_all" on public.newsletter_subscribers;
-create policy "newsletter_admin_all"
-on public.newsletter_subscribers for all
-using (public.is_admin(auth.uid()))
-with check (public.is_admin(auth.uid()));
-
+-- Affiliate links: public SELECT only active
 drop policy if exists "affiliate_links_public_read_active" on public.affiliate_links;
 create policy "affiliate_links_public_read_active"
 on public.affiliate_links for select
-using (is_active = true or public.is_admin(auth.uid()));
+using (is_active = true);
 
-drop policy if exists "affiliate_links_admin_all" on public.affiliate_links;
-create policy "affiliate_links_admin_all"
-on public.affiliate_links for all
-using (public.is_admin(auth.uid()))
-with check (public.is_admin(auth.uid()));
-
+-- Affiliate clicks: allow public INSERT for tracking
 drop policy if exists "affiliate_clicks_public_insert" on public.affiliate_clicks;
 create policy "affiliate_clicks_public_insert"
 on public.affiliate_clicks for insert
 with check (true);
 
-drop policy if exists "affiliate_clicks_admin_read" on public.affiliate_clicks;
-create policy "affiliate_clicks_admin_read"
-on public.affiliate_clicks for select
-using (public.is_admin(auth.uid()));
+-- Newsletter subscribers: allow public INSERT
+drop policy if exists "newsletter_public_insert" on public.newsletter_subscribers;
+create policy "newsletter_public_insert"
+on public.newsletter_subscribers for insert
+with check (true);
 
+-- Ads: public SELECT only active
 drop policy if exists "ads_public_read_active" on public.ads;
 create policy "ads_public_read_active"
 on public.ads for select
-using (is_active = true or public.is_admin(auth.uid()));
+using (is_active = true);
 
-drop policy if exists "ads_admin_all" on public.ads;
-create policy "ads_admin_all"
-on public.ads for all
-using (public.is_admin(auth.uid()))
-with check (public.is_admin(auth.uid()));
-
+-- Ad impressions: allow public INSERT
 drop policy if exists "ad_impressions_public_insert" on public.ad_impressions;
 create policy "ad_impressions_public_insert"
 on public.ad_impressions for insert
 with check (true);
 
-drop policy if exists "ad_impressions_admin_read" on public.ad_impressions;
-create policy "ad_impressions_admin_read"
-on public.ad_impressions for select
-using (public.is_admin(auth.uid()));
 
 drop trigger if exists profiles_set_updated_at on public.profiles;
 create trigger profiles_set_updated_at before update on public.profiles
